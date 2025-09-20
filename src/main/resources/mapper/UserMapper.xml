@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.helloworld.mapper.UserMapper">
+
+    <!-- Result Map for User entity -->
+    <resultMap id="UserResultMap" type="com.example.helloworld.entity.User">
+        <id property="id" column="id"/>
+        <result property="username" column="username"/>
+        <result property="email" column="email"/>
+        <result property="fullName" column="full_name"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="isActive" column="is_active"/>
+    </resultMap>
+
+    <!-- Select all users -->
+    <select id="findAll" resultMap="UserResultMap">
+        SELECT id, username, email, full_name, created_at, updated_at, is_active
+        FROM users
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- Select user by ID -->
+    <select id="findById" parameterType="long" resultMap="UserResultMap">
+        SELECT id, username, email, full_name, created_at, updated_at, is_active
+        FROM users
+        WHERE id = #{id}
+    </select>
+
+    <!-- Select users by username (like search) -->
+    <select id="findByUsernameContaining" parameterType="string" resultMap="UserResultMap">
+        SELECT id, username, email, full_name, created_at, updated_at, is_active
+        FROM users
+        WHERE username LIKE '%' || #{username} || '%'
+        ORDER BY username
+    </select>
+
+    <!-- Select active users only -->
+    <select id="findByIsActiveTrue" resultMap="UserResultMap">
+        SELECT id, username, email, full_name, created_at, updated_at, is_active
+        FROM users
+        WHERE is_active = true
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- Select users by email domain -->
+    <select id="findByEmailDomain" parameterType="string" resultMap="UserResultMap">
+        SELECT id, username, email, full_name, created_at, updated_at, is_active
+        FROM users
+        WHERE email LIKE '%@' || #{domain}
+        ORDER BY email
+    </select>
+
+    <!-- Select recent users (last 10) -->
+    <select id="findRecentUsers" resultMap="UserResultMap">
+        SELECT id, username, email, full_name, created_at, updated_at, is_active
+        FROM users
+        ORDER BY created_at DESC
+        LIMIT 10
+    </select>
+
+    <!-- Count active users -->
+    <select id="countActiveUsers" resultType="long">
+        SELECT COUNT(*)
+        FROM users
+        WHERE is_active = true
+    </select>
+
+    <!-- Check if username exists -->
+    <select id="existsByUsername" parameterType="string" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM users
+        WHERE username = #{username}
+    </select>
+
+    <!-- Check if email exists -->
+    <select id="existsByEmail" parameterType="string" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM users
+        WHERE email = #{email}
+    </select>
+
+    <!-- Insert new user -->
+    <insert id="insert" parameterType="com.example.helloworld.entity.User" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO users (username, email, full_name, created_at, updated_at, is_active)
+        VALUES (#{username}, #{email}, #{fullName}, #{createdAt}, #{updatedAt}, #{isActive})
+    </insert>
+
+    <!-- Update user -->
+    <update id="update" parameterType="com.example.helloworld.entity.User">
+        UPDATE users
+        SET username = #{username},
+            email = #{email},
+            full_name = #{fullName},
+            updated_at = #{updatedAt},
+            is_active = #{isActive}
+        WHERE id = #{id}
+    </update>
+
+    <!-- Delete user by ID -->
+    <delete id="deleteById" parameterType="long">
+        DELETE FROM users WHERE id = #{id}
+    </delete>
+
+    <!-- Select users with pagination -->
+    <select id="findAllWithPagination" resultMap="UserResultMap">
+        SELECT id, username, email, full_name, created_at, updated_at, is_active
+        FROM users
+        ORDER BY 
+        <choose>
+            <when test="sortBy == 'username'">username</when>
+            <when test="sortBy == 'email'">email</when>
+            <when test="sortBy == 'fullName'">full_name</when>
+            <when test="sortBy == 'updatedAt'">updated_at DESC</when>
+            <otherwise>created_at DESC</otherwise>
+        </choose>
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <!-- Count total users -->
+    <select id="countAll" resultType="long">
+        SELECT COUNT(*) FROM users
+    </select>
+
+    <!-- Advanced search with multiple criteria -->
+    <select id="searchUsers" resultMap="UserResultMap">
+        SELECT id, username, email, full_name, created_at, updated_at, is_active
+        FROM users
+        <where>
+            <if test="username != null and username != ''">
+                AND username LIKE '%' || #{username} || '%'
+            </if>
+            <if test="email != null and email != ''">
+                AND email LIKE '%' || #{email} || '%'
+            </if>
+            <if test="fullName != null and fullName != ''">
+                AND full_name LIKE '%' || #{fullName} || '%'
+            </if>
+            <if test="isActive != null">
+                AND is_active = #{isActive}
+            </if>
+        </where>
+        ORDER BY created_at DESC
+    </select>
+
+</mapper>
